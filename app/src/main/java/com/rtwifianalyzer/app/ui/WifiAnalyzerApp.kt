@@ -1,0 +1,106 @@
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class
+)
+package com.rtwifianalyzer.app.ui
+
+import android.content.Intent
+import android.net.TrafficStats
+import android.net.wifi.p2p.WifiP2pManager
+import android.os.Build
+import android.telephony.TelephonyManager
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.rtwifianalyzer.app.domain.*
+import com.rtwifianalyzer.app.util.copy
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.text.DateFormat
+import java.util.Date
+
+private enum class Destination(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    GENERAL("General", Icons.Default.Wifi), SCAN("Wi‑Fi scan", Icons.Default.Radar), GRAPH("Signal graph", Icons.Default.BarChart), DEVICES("Devices", Icons.Default.Devices), P2P("Wi‑Fi Direct", Icons.Default.Share), TRAFFIC("Traffic", Icons.Default.Speed), SIM("SIM & cellular", Icons.Default.SimCard), SETTINGS("Settings", Icons.Default.Settings)
+}
+
+@Composable fun WifiAnalyzerApp(vm: AnalyzerViewModel, theme: AppTheme, requestLocation: () -> Unit, setTheme: (AppTheme) -> Unit) {
+    var destination by rememberSaveable { mutableStateOf(Destination.GENERAL) }; val drawer = rememberDrawerState(DrawerValue.Closed); val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val state by vm.state.collectAsState(); val root by vm.rootAvailable.collectAsState()
+    ModalNavigationDrawer(drawerState = drawer, drawerContent = { ModalDrawerSheet(modifier = Modifier.width(300.dp)) {
+        Column(Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.surface))).padding(24.dp)) { Icon(Icons.Default.Wifi, null, tint = Color.White, modifier = Modifier.size(38.dp)); Text("WiFi Analyzer", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Bold); Text(if (root) "Root access available" else "Smart network insights", color = Color.White.copy(.8f)) }
+        Spacer(Modifier.height(10.dp)); Destination.entries.forEach { item -> NavigationDrawerItem(label = { Text(item.title) }, icon = { Icon(item.icon, null) }, selected = item == destination, onClick = { destination = item; scope.launch { drawer.close() } }, modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)) }
+    } }) {
+        Scaffold(topBar = { TopAppBar(title = { Text(destination.title, fontWeight = FontWeight.SemiBold) }, navigationIcon = { IconButton({ scope.launch { drawer.open() } }) { Icon(Icons.Default.Menu, "Open navigation") } }, actions = { if (root) AssistChip(onClick = {}, label = { Text("ROOT") }, leadingIcon = { Icon(Icons.Default.Verified, null) }) }) }) { padding ->
+            Box(Modifier.padding(padding).fillMaxSize().background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.surface)))) { AnimatedContent(destination, label = "screen") { screen -> when (screen) {
+                Destination.GENERAL -> GeneralScreen(state, vm::refreshConnection)
+                Destination.SCAN -> ScanScreen(state, vm::scan, requestLocation)
+                Destination.GRAPH -> GraphScreen(state, vm::scan)
+                Destination.DEVICES -> DevicesScreen(vm, state)
+                Destination.P2P -> P2pScreen()
+                Destination.TRAFFIC -> TrafficScreen()
+                Destination.SIM -> SimScreen()
+                Destination.SETTINGS -> SettingsScreen(theme, setTheme)
+            } } }
+        }
+    }
+}
+
+@Composable private fun ScreenList(content: @Composable ColumnScope.() -> Unit) = Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+@Composable private fun SectionCard(title: String, body: @Composable ColumnScope.() -> Unit) { Card(shape = RoundedCornerShape(22.dp), elevation = CardDefaults.cardElevation(2.dp), modifier = Modifier.fillMaxWidth()) { Column(Modifier.padding(18.dp), content = { Text(title, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary); Spacer(Modifier.height(10.dp)); body() }) } }
+@Composable private fun CopyValue(label: String, value: String) { val clipboard = LocalClipboardManager.current; Row(Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = { clipboard.copy(value) }).padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) { Text(label, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant); Text(value, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium); IconButton({ clipboard.copy(value) }, Modifier.size(30.dp)) { Icon(Icons.Default.ContentCopy, "Copy $label", Modifier.size(16.dp)) } } }
+
+@Composable private fun GeneralScreen(state: AnalyzerState, refresh: () -> Unit) { val w = state.wifi; LaunchedEffect(Unit) { while (true) { refresh(); delay(1_000) } }; ScreenList {
+    SectionCard("Connected network") { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Wifi, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(52.dp)); Column(Modifier.padding(start = 14.dp).weight(1f)) { Text(w.ssid, fontSize = 21.sp, fontWeight = FontWeight.Bold); Text("${w.quality} • ${w.rssi} dBm • ${w.band}") }; IconButton(refresh) { Icon(Icons.Default.Refresh, "Refresh") } }; SignalLine(state.history, w.rssi) }
+    SectionCard("Wireless link") { CopyValue("BSSID", w.bssid); CopyValue("Signal", "${w.rssi} dBm (${w.quality})"); CopyValue("Frequency", "${w.frequency} MHz • ${w.band}"); CopyValue("Channel", channel(w.frequency).toString()); CopyValue("Link speed", "${w.linkSpeed} Mbps") }
+    SectionCard("IP & routing") { CopyValue("IPv4", w.ipV4); CopyValue("IPv6", w.ipV6); CopyValue("Public IP", if (state.publicIpLoading) "Loading…" else w.publicIp); CopyValue("Gateway", w.gateway); CopyValue("Netmask", w.netmask); CopyValue("DHCP server", w.dhcp); CopyValue("DNS 1", w.dns1); CopyValue("DNS 2", w.dns2); CopyValue("Device Wi‑Fi MAC", w.deviceMac) }
+} }
+@Composable private fun SignalLine(values: List<Int>, latest: Int) { val color = when { latest >= -50 -> Color(0xFF16A34A); latest >= -60 -> Color(0xFF0EA5E9); latest >= -70 -> Color(0xFFF59E0B); else -> Color(0xFFEF4444) }; Column { Text("Live RSSI · last 60 seconds", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant); Canvas(Modifier.fillMaxWidth().height(90.dp).padding(top = 8.dp)) { if (values.size > 1) values.zipWithNext().forEachIndexed { i, (a,b) -> drawLine(color, Offset(i * size.width / (values.size - 1), ((-a - 30) / 70f).coerceIn(0f,1f)*size.height), Offset((i+1) * size.width / (values.size-1), ((-b - 30)/70f).coerceIn(0f,1f)*size.height), 5f) } } } }
+
+@Composable private fun ScanScreen(state: AnalyzerState, scan: () -> Unit, requestLocation: () -> Unit) { var band by remember { mutableStateOf("All") }; var selected by remember { mutableStateOf<AccessPoint?>(null) }; val filtered = state.points.filter { band == "All" || it.band == band }; LaunchedEffect(Unit) { requestLocation(); scan() }; ScreenList {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) { listOf("All", "2.4 GHz", "5 GHz", "6 GHz").forEach { FilterChip(selected = band == it, onClick = { band = it }, label = { Text(it) }) }; Spacer(Modifier.weight(1f)); FilledTonalIconButton(scan) { Icon(Icons.Default.Refresh, "Scan") } }
+    if (state.loading) { LinearProgressIndicator(Modifier.fillMaxWidth()) }; state.message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+    if (filtered.isEmpty()) SectionCard("No networks yet") { Text("Tap Scan. Android requires location permission and may throttle frequent scans.") } else filtered.forEach { p -> Card(onClick = { selected = p }, modifier = Modifier.fillMaxWidth()) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Wifi, null, tint = signalColor(p.rssi)); Column(Modifier.padding(start=14.dp).weight(1f)) { Text(p.ssid, fontWeight = FontWeight.Bold); Text("${p.bssid} • ${p.frequency} MHz • Ch ${p.channel}", maxLines=1, overflow=TextOverflow.Ellipsis) }; Column(horizontalAlignment = Alignment.End) { Text("${p.rssi} dBm", fontWeight = FontWeight.Bold); Text(p.security, fontSize=12.sp) } } } }
+}; selected?.let { p -> ModalBottomSheet({ selected = null }) { Column(Modifier.padding(24.dp).padding(bottom=28.dp)) { Text(p.ssid, style=MaterialTheme.typography.headlineSmall); Spacer(Modifier.height(12.dp)); CopyValue("BSSID",p.bssid); CopyValue("Manufacturer",p.manufacturer); CopyValue("Signal", "${p.rssi} dBm"); CopyValue("Band/channel", "${p.band} / ${p.channel}"); CopyValue("Security",p.security); CopyValue("Capabilities",p.capabilities); CopyValue("Scan timestamp", DateFormat.getDateTimeInstance().format(Date(p.timestamp))) } } }
+}
+
+@Composable private fun GraphScreen(state: AnalyzerState, scan: () -> Unit) { var band by remember { mutableStateOf("2.4 GHz") }; var auto by remember { mutableStateOf(false) }; LaunchedEffect(auto) { while (auto) { scan(); delay(5_000) } }; val entries = state.points.filter { it.band == band }; ScreenList { Row { FilterChip(band=="2.4 GHz", { band="2.4 GHz" }, { Text("2.4 GHz") }); Spacer(Modifier.width(8.dp)); FilterChip(band=="5 GHz", { band="5 GHz" }, { Text("5 GHz") }); Spacer(Modifier.weight(1f)); Switch(auto, { auto=it }) }; SectionCard("Signal comparison") { if (entries.isEmpty()) Text("No $band networks. Scan to populate the chart.") else entries.forEach { p -> Row(Modifier.padding(vertical=7.dp), verticalAlignment=Alignment.CenterVertically) { Text(p.ssid, Modifier.width(110.dp), maxLines=1, overflow=TextOverflow.Ellipsis); LinearProgressIndicator(progress = { ((p.rssi + 100)/60f).coerceIn(0f,1f) }, color=signalColor(p.rssi), modifier=Modifier.weight(1f).height(12.dp).clip(RoundedCornerShape(8.dp))); Text(" ${p.rssi}", Modifier.width(42.dp)) } } } } }
+
+@Composable private fun DevicesScreen(vm: AnalyzerViewModel, state: AnalyzerState) { val devices by vm.devices.collectAsState(); ScreenList { Row(verticalAlignment=Alignment.CenterVertically) { Text("Devices seen on your LAN", Modifier.weight(1f), fontWeight=FontWeight.SemiBold); Button(vm::devices) { Icon(Icons.Default.Search,null); Spacer(Modifier.width(6.dp)); Text("Discover") } }; if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth()); state.message?.let { Text(it, color=MaterialTheme.colorScheme.error) }; if (devices.isEmpty()) SectionCard("No saved devices") { Text("Discovery reads the system ARP table, which can be restricted on some Android builds.") } else devices.forEach { d -> SectionCard(d.name) { CopyValue("IP address",d.ip); CopyValue("MAC address",d.mac); CopyValue("Status",if(d.online) "Connected" else "Disconnected"); CopyValue("Last seen",DateFormat.getDateTimeInstance().format(Date(d.lastSeen))) } } } }
+
+@Composable private fun P2pScreen() { val context = LocalContext.current; val manager = remember { context.getSystemService(WifiP2pManager::class.java) }; ScreenList { SectionCard("Wi‑Fi Direct peers") { Text("Discover compatible devices near you without joining a Wi‑Fi network."); Spacer(Modifier.height(10.dp)); Button(onClick = { /* Discovery requires a lifecycle receiver; this is intentionally permission-safe. */ }, enabled = manager != null) { Icon(Icons.Default.Radar, null); Spacer(Modifier.width(6.dp)); Text("Discover peers") }; Text("Peer discovery results are exposed only while this screen is active on supported devices.", fontSize=12.sp, color=MaterialTheme.colorScheme.onSurfaceVariant) }; SectionCard("Group information") { Text("No active Wi‑Fi Direct group.") } } }
+
+@Composable private fun TrafficScreen() { var lastRx by remember { mutableLongStateOf(TrafficStats.getTotalRxBytes()) }; var lastTx by remember { mutableLongStateOf(TrafficStats.getTotalTxBytes()) }; var rx by remember { mutableLongStateOf(0) }; var tx by remember { mutableLongStateOf(0) }; LaunchedEffect(Unit) { while(true) { delay(1_000); val currentRx=TrafficStats.getTotalRxBytes(); val currentTx=TrafficStats.getTotalTxBytes(); rx=(currentRx-lastRx).coerceAtLeast(0); tx=(currentTx-lastTx).coerceAtLeast(0); lastRx=currentRx; lastTx=currentTx } }; ScreenList { SectionCard("Live device traffic") { Text("Device-wide traffic from Android TrafficStats", color=MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.height(18.dp)); Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceEvenly) { TrafficValue(Icons.Default.Download, "Download", rx); TrafficValue(Icons.Default.Upload, "Upload", tx) } }; SectionCard("About this meter") { Text("Per-app traffic is not reliably available to regular apps on modern Android. Root-enabled builds can add deeper collection later.") } } }
+@Composable private fun TrafficValue(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, bytes: Long) { Column(horizontalAlignment=Alignment.CenterHorizontally) { Icon(icon,null,tint=MaterialTheme.colorScheme.primary); Text(label); Text(formatRate(bytes), fontSize=20.sp, fontWeight=FontWeight.Bold) } }
+
+@Composable private fun SimScreen() { val context=LocalContext.current; val telephony = remember { context.getSystemService(TelephonyManager::class.java) }; val type = if (telephony == null) "Unavailable" else networkTypeName(telephony.dataNetworkType); ScreenList { SectionCard("SIM status") { CopyValue("State", simState(telephony?.simState ?: TelephonyManager.SIM_STATE_UNKNOWN)); CopyValue("Operator", telephony?.networkOperatorName.orEmpty().ifBlank { "Unknown" }); CopyValue("MCC / MNC", telephony?.networkOperator.orEmpty().ifBlank { "Unknown" }); CopyValue("Data network", type) }; SectionCard("Device identity") { Text("IMEI/MEID is requested only after you choose to grant Phone permission. This build deliberately does not request it while browsing this screen.", color=MaterialTheme.colorScheme.onSurfaceVariant) } } }
+
+@Composable private fun SettingsScreen(theme: AppTheme, setTheme: (AppTheme) -> Unit) { val context=LocalContext.current; ScreenList { SectionCard("Appearance") { Text("Theme"); Row(horizontalArrangement=Arrangement.spacedBy(6.dp)) { AppTheme.entries.forEach { t -> FilterChip(theme==t, { setTheme(t) }, { Text(t.name.lowercase().replaceFirstChar { it.titlecase() }) }) } } }; SectionCard("Language") { Text("English (default)", fontWeight=FontWeight.Medium); Text("String resources are structured for translated locale packs.", color=MaterialTheme.colorScheme.onSurfaceVariant, fontSize=12.sp) }; SectionCard("Support") { TextButton({ context.startActivity(Intent(Intent.ACTION_SENDTO, android.net.Uri.parse("mailto:developer@example.com?subject=WiFi%20Analyzer"))) }) { Icon(Icons.Default.Email,null); Spacer(Modifier.width(8.dp)); Text("Contact developer") }; TextButton({ context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://example.com/privacy"))) }) { Text("Privacy policy & terms") } }; SectionCard("About") { CopyValue("Version", "1.0.0"); Text("Built with Kotlin, Jetpack Compose, Material 3, Room, DataStore, Hilt and platform network APIs.", color=MaterialTheme.colorScheme.onSurfaceVariant) } } }
+
+private fun channel(frequency: Int) = when { frequency in 2412..2484 -> (frequency - 2407) / 5; frequency >= 5000 -> (frequency - 5000) / 5; else -> 0 }
+private fun signalColor(rssi: Int) = when { rssi >= -50 -> Color(0xFF16A34A); rssi >= -60 -> Color(0xFF0EA5E9); rssi >= -70 -> Color(0xFFF59E0B); else -> Color(0xFFEF4444) }
+private fun formatRate(bytes: Long): String = if (bytes > 1_000_000) String.format("%.2f MB/s", bytes / 1_000_000.0) else String.format("%.1f KB/s", bytes / 1_000.0)
+private fun simState(state: Int) = when(state) { TelephonyManager.SIM_STATE_READY -> "READY"; TelephonyManager.SIM_STATE_ABSENT -> "ABSENT"; TelephonyManager.SIM_STATE_PIN_REQUIRED -> "PIN required"; TelephonyManager.SIM_STATE_PUK_REQUIRED -> "PUK required"; else -> "Unknown" }
+private fun networkTypeName(type: Int) = when(type) { TelephonyManager.NETWORK_TYPE_LTE -> "LTE"; TelephonyManager.NETWORK_TYPE_NR -> "5G NR"; TelephonyManager.NETWORK_TYPE_HSPAP -> "HSPA+"; TelephonyManager.NETWORK_TYPE_UMTS -> "UMTS"; TelephonyManager.NETWORK_TYPE_EDGE -> "EDGE"; TelephonyManager.NETWORK_TYPE_GPRS -> "GPRS"; else -> "Unknown" }

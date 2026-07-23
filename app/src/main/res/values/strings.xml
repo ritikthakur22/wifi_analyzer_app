@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">WiFi Analyzer</string>
+    <string name="permission_location">Location permission is required by Android to scan nearby Wi-Fi networks.</string>
+    <string name="unknown">Unknown</string>
+</resources>
