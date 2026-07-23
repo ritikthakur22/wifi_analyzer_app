@@ -8,7 +8,7 @@
     <img src="https://img.shields.io/badge/Kotlin-1.9+-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin" />
     <img src="https://img.shields.io/badge/Compose-Material%203-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose" />
     <img src="https://img.shields.io/badge/SDK-26%20to%2035-3DDC84?style=flat-square" alt="SDK 26 to 35" />
-    <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License: MIT" />
+    <img src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" alt="License: Proprietary" />
   </p>
 </div>
 
