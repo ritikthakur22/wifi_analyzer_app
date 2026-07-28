@@ -34,7 +34,7 @@
 
 | General Info | Scan Results | Signal Graph | Device Discovery |
 | :---: | :---: | :---: | :---: |
-| <img src="https://via.placeholder.com/250x500.png?text=General+Screen" width="200"/> | <img src="https://via.placeholder.com/250x500.png?text=Scan+Screen" width="200"/> | <img src="https://via.placeholder.com/250x500.png?text=Graph+Screen" width="200"/> | <img src="https://via.placeholder.com/250x500.png?text=Devices+Screen" width="200"/> |
+| <img src="docs/images/general_info_screen_1785246735941.jpg" width="200"/> | <img src="docs/images/scan_screen_1785246757461.jpg" width="200"/> | <img src="docs/images/graph_screen_1785246769431.jpg" width="200"/> | <img src="docs/images/devices_screen_1785246779927.jpg" width="200"/> |
 
 ---
 
