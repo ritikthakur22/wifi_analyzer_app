@@ -21,7 +21,10 @@ data class AnalyzerState(val wifi: WifiSnapshot = WifiSnapshot(), val points: Li
 class AnalyzerViewModel @Inject constructor(private val repo: WifiRepository, private val db: DeviceDatabase) : ViewModel() {
     private val _state = MutableStateFlow(AnalyzerState())
     val state: StateFlow<AnalyzerState> = _state.asStateFlow()
-    val devices = db.deviceDao().observeAll().map { rows -> rows.map { NetworkDevice(it.ip, it.mac, it.name, it.manufacturer, it.online, it.lastSeen) } }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val devices = db.deviceDao().observeAll().map { rows -> rows
+        .filter { it.ip.matches(Regex("^\\d{1,3}(?:\\.\\d{1,3}){3}$")) }
+        .map { NetworkDevice(it.ip, it.mac, it.name, it.manufacturer, it.online, it.lastSeen) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val privilegedAccess = MutableStateFlow(false)
     val shizukuRunning = MutableStateFlow(false)
     init { refreshConnection(); checkPrivileges() }
