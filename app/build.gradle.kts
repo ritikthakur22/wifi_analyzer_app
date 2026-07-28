@@ -22,6 +22,21 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+    signingConfigs {
+        create("release") {
+            storeFile = file("release.keystore")
+            storePassword = "password"
+            keyAlias = "release"
+            keyPassword = "password"
+        }
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
 }
 
@@ -49,4 +64,6 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
     implementation("com.patrykandpatrick.vico:compose:2.0.3")
     debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
 }

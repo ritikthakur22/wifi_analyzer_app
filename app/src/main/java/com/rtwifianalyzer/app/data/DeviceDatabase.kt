@@ -11,5 +11,5 @@ data class DeviceEntity(@PrimaryKey val mac: String, val ip: String, val name: S
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(device: DeviceEntity)
 }
 
-@Database(entities = [DeviceEntity::class], version = 1)
+@Database(entities = [DeviceEntity::class], version = 1, exportSchema = false)
 abstract class DeviceDatabase : RoomDatabase() { abstract fun deviceDao(): DeviceDao }

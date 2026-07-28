@@ -1,11 +1,15 @@
 package com.rtwifianalyzer.app.data
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
 import android.os.Build
 import com.rtwifianalyzer.app.domain.AccessPoint
 import com.rtwifianalyzer.app.domain.NetworkDevice
+import com.rtwifianalyzer.app.domain.SavedWifiNetwork
 import com.rtwifianalyzer.app.domain.WifiSnapshot
+import com.topjohnwu.superuser.Shell
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -16,6 +20,12 @@ import javax.inject.Inject
 import dagger.hilt.android.qualifiers.ApplicationContext
 
 class WifiRepository @Inject constructor(private val wifi: WifiManager, @ApplicationContext private val context: Context) {
+    fun isWifiConnected(): Boolean = runCatching {
+        val connectivity = context.getSystemService(ConnectivityManager::class.java)
+        connectivity.getNetworkCapabilities(connectivity.activeNetwork)
+            ?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+    }.getOrDefault(false)
+
     @Suppress("DEPRECATION") fun snapshot(): WifiSnapshot = runCatching {
         val i = wifi.connectionInfo
         if (i == null) {
@@ -39,5 +49,36 @@ class WifiRepository @Inject constructor(private val wifi: WifiManager, @Applica
         runCatching { File("/proc/net/arp").readLines().drop(1).mapNotNull { line ->
             val p = line.trim().split(Regex("\\s+")); if (p.size >= 4 && p[3] != "00:00:00:00:00:00") NetworkDevice(p[0], p[3], runCatching { InetAddress.getByName(p[0]).canonicalHostName }.getOrDefault("Unknown device")) else null
         }}.getOrDefault(emptyList())
+    }
+
+    suspend fun savedWifiNetworks(): Pair<List<SavedWifiNetwork>, String?> = withContext(Dispatchers.IO) {
+        val isRoot = runCatching { Shell.getShell().isRoot }.getOrDefault(false)
+        val hasShizuku = runCatching { rikka.shizuku.Shizuku.pingBinder() && rikka.shizuku.Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED }.getOrDefault(false)
+        if (!isRoot && !hasShizuku) {
+            return@withContext emptyList<SavedWifiNetwork>() to "Saved network passwords require Root or Shizuku access on Android."
+        }
+        val output = runCatching {
+            val cmd = "for f in /data/misc/apexdata/com.android.wifi/WifiConfigStore.xml /data/misc/wifi/WifiConfigStore.xml /data/misc/wifi/wpa_supplicant.conf; do [ -r \$f ] && cat \$f; done"
+            if (isRoot) Shell.cmd(cmd).exec().out.joinToString("\n")
+            else rikka.shizuku.Shizuku.newProcess(arrayOf("sh", "-c", cmd), null, null).inputStream.bufferedReader().use { it.readText() }
+        }.getOrDefault("")
+        val networks = parseSavedNetworks(output)
+        networks to if (networks.isEmpty()) "No readable saved Wi‑Fi configuration was found on this Android build." else null
+    }
+
+    private fun parseSavedNetworks(config: String): List<SavedWifiNetwork> {
+        fun decode(value: String) = value.replace("&quot;", "\"").replace("&amp;", "&").trim().removeSurrounding("\"")
+        fun value(block: String, name: String) = Regex("<string name=\\\"$name\\\">(.*?)</string>", RegexOption.DOT_MATCHES_ALL).find(block)?.groupValues?.get(1)?.let(::decode)
+        val xml = Regex("<Network>(.*?)</Network>", RegexOption.DOT_MATCHES_ALL).findAll(config).mapNotNull { match ->
+            val block = match.groupValues[1]
+            value(block, "SSID")?.takeIf { it.isNotBlank() }?.let { SavedWifiNetwork(it, value(block, "PreSharedKey")?.takeUnless { key -> key.isBlank() || key == "*" || key.equals("null", true) }) }
+        }
+        val supplicant = Regex("network=\\s*\\{(.*?)\\}", RegexOption.DOT_MATCHES_ALL).findAll(config).mapNotNull { match ->
+            val block = match.groupValues[1]
+            val ssid = Regex("ssid=\\\"(.*?)\\\"").find(block)?.groupValues?.get(1)
+            val password = Regex("psk=\\\"(.*?)\\\"").find(block)?.groupValues?.get(1)
+            ssid?.takeIf { it.isNotBlank() }?.let { SavedWifiNetwork(it, password) }
+        }
+        return (xml + supplicant).distinctBy { it.ssid }.sortedBy { it.ssid.lowercase() }
     }
 }

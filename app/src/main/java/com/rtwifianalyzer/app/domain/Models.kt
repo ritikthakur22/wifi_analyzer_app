@@ -20,4 +20,5 @@ data class AccessPoint(val ssid: String, val bssid: String, val rssi: Int, val f
 }
 
 data class NetworkDevice(val ip: String, val mac: String, val name: String = "Unknown device", val manufacturer: String = "Unknown", val online: Boolean = true, val lastSeen: Long = System.currentTimeMillis())
+data class SavedWifiNetwork(val ssid: String, val password: String?)
 enum class AppTheme { SYSTEM, LIGHT, DARK }
