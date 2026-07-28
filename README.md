@@ -23,6 +23,7 @@
 *   **🌐 Traffic Monitor:** Track live upload and download speeds globally on your device using `TrafficStats`.
 *   **🔗 Wi-Fi Direct (P2P):** Check Wi-Fi Direct availability and manage peer groups.
 *   **📶 SIM & Cellular Telemetry:** View SIM state, operator name, network type (LTE/5G/EDGE), without requiring intrusive phone permissions by default.
+*   **🔑 Saved Wi-Fi:** View saved Wi-Fi networks and their passwords (requires Root or Shizuku).
 *   **🎨 Dynamic Theming:** System, Light, and Dark themes built with Jetpack Compose Material 3.
 
 ---
@@ -37,17 +38,17 @@
 
 ---
 
-## 🛡️ Root vs Non-Root Capabilities
+## 🛡️ Privileged Access (Root & Shizuku)
 
-The app gracefully degrades if root access is unavailable. It detects the presence of `libsu` and adjusts its behavior:
+The app gracefully degrades if privileged access is unavailable. It detects the presence of `libsu` or **Shizuku** and adjusts its behavior:
 
-| Feature | 👤 Non-Root (Standard) | ⚡ Root (Superuser) |
-| :--- | :--- | :--- |
-| **Basic Wi-Fi Info** | ✅ Yes | ✅ Yes |
-| **Wi-Fi Scanning** | ✅ Yes (May be throttled by OS) | ✅ Yes (Bypass OS scan throttling) |
-| **ARP Table (LAN Devices)** | ⚠️ Restricted on Android 10+ (Reads `/proc/net/arp`) | ✅ Full Access (Reads routing tables) |
-| **Saved Passwords** | ❌ No | ✅ View saved Wi-Fi passwords |
-| **Per-App Traffic** | ❌ No | ✅ Track traffic per application |
+| Feature | 👤 Standard (No Privileges) | 💧 Shizuku | ⚡ Root (Superuser) |
+| :--- | :--- | :--- | :--- |
+| **Basic Wi-Fi Info** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Wi-Fi Scanning** | ✅ Yes (May be throttled by OS) | ✅ Yes | ✅ Yes (Bypass OS throttling) |
+| **ARP Table (LAN Devices)** | ⚠️ Restricted on Android 10+ (Reads `/proc/net/arp`) | ⚠️ Restricted | ✅ Full Access (Reads routing tables) |
+| **Saved Passwords** | ❌ No | ✅ View saved Wi-Fi passwords | ✅ View saved Wi-Fi passwords |
+| **Per-App Traffic** | ❌ No | ❌ No | ✅ Track traffic per application |
 
 ---
 
@@ -62,6 +63,7 @@ This project is built using modern Android development practices:
 *   **[Room Database](https://developer.android.com/training/data-storage/room):** Local SQLite persistence for discovered ARP devices.
 *   **[DataStore](https://developer.android.com/topic/libraries/architecture/datastore):** Preferences management (Theming).
 *   **[libsu](https://github.com/topjohnwu/libsu):** Robust root access handling.
+*   **[Shizuku](https://shizuku.rikka.app/):** Securely access system APIs without requiring root.
 
 ### 🏗️ Flowchart (App Architecture)
 
@@ -73,14 +75,15 @@ graph TD
     C -->|Wi-Fi Info & Scans| D[WifiManager]
     C -->|Device History| E[(Room DB)]
     C -->|Preferences| F[DataStore]
-    C -->|Root Execution| G[libsu Shell]
+    C -->|Root / Shell Execution| G[libsu & Shizuku]
 
     B --> H[Compose UI Navigation]
     H --> I[General Screen]
     H --> J[Scan Screen]
     H --> K[Signal Graph]
     H --> L[LAN Devices]
-    H --> M[Settings & Traffic]
+    H --> M[Saved Wi-Fi]
+    H --> N[Settings & Traffic]
 ```
 
 ---
