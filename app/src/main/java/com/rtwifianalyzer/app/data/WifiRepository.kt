@@ -46,9 +46,34 @@ class WifiRepository @Inject constructor(private val wifi: WifiManager, @Applica
     fun requestScan(): Boolean = runCatching { wifi.startScan() }.getOrDefault(false)
     suspend fun publicIp(): String = withContext(Dispatchers.IO) { runCatching { URL("https://api.ipify.org").readText().trim() }.getOrDefault("Unavailable") }
     suspend fun arpDevices(): List<NetworkDevice> = withContext(Dispatchers.IO) {
-        runCatching { File("/proc/net/arp").readLines().drop(1).mapNotNull { line ->
-            val p = line.trim().split(Regex("\\s+")); if (p.size >= 4 && p[3] != "00:00:00:00:00:00") NetworkDevice(p[0], p[3], runCatching { InetAddress.getByName(p[0]).canonicalHostName }.getOrDefault("Unknown device")) else null
-        }}.getOrDefault(emptyList())
+        val isRoot = runCatching { Shell.getShell().isRoot }.getOrDefault(false)
+        val hasShizuku = runCatching { rikka.shizuku.Shizuku.pingBinder() && rikka.shizuku.Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED }.getOrDefault(false)
+        val cmd = "ip neigh"
+        val outputLines = runCatching {
+            if (isRoot) Shell.cmd(cmd).exec().out
+            else if (hasShizuku) rikka.shizuku.Shizuku.newProcess(arrayOf("sh", "-c", cmd), null, null).inputStream.bufferedReader().readLines()
+            else File("/proc/net/arp").readLines().drop(1)
+        }.getOrDefault(emptyList())
+
+        if (isRoot || hasShizuku) {
+            outputLines.mapNotNull { line ->
+                val parts = line.split(Regex("\\s+"))
+                if (parts.size >= 5 && parts.contains("lladdr")) {
+                    val ip = parts[0]
+                    val macIdx = parts.indexOf("lladdr") + 1
+                    if (macIdx < parts.size) {
+                        val mac = parts[macIdx]
+                        if (mac != "00:00:00:00:00:00") {
+                            NetworkDevice(ip, mac, runCatching { InetAddress.getByName(ip).canonicalHostName }.getOrDefault("Unknown device"))
+                        } else null
+                    } else null
+                } else null
+            }
+        } else {
+            outputLines.mapNotNull { line ->
+                val p = line.trim().split(Regex("\\s+")); if (p.size >= 4 && p[3] != "00:00:00:00:00:00") NetworkDevice(p[0], p[3], runCatching { InetAddress.getByName(p[0]).canonicalHostName }.getOrDefault("Unknown device")) else null
+            }
+        }
     }
 
     suspend fun savedWifiNetworks(): Pair<List<SavedWifiNetwork>, String?> = withContext(Dispatchers.IO) {

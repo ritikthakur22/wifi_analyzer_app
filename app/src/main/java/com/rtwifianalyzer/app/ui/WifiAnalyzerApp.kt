@@ -144,6 +144,10 @@ private enum class Destination(val title: String, val icon: androidx.compose.ui.
 
 private fun channel(frequency: Int) = when { frequency in 2412..2484 -> (frequency - 2407) / 5; frequency >= 5000 -> (frequency - 5000) / 5; else -> 0 }
 private fun signalColor(rssi: Int) = when { rssi >= -50 -> Color(0xFF16A34A); rssi >= -60 -> Color(0xFF0EA5E9); rssi >= -70 -> Color(0xFFF59E0B); else -> Color(0xFFEF4444) }
-private fun formatRate(bytes: Long): String = if (bytes > 1_000_000) String.format("%.2f MB/s", bytes / 1_000_000.0) else String.format("%.1f KB/s", bytes / 1_000.0)
+private fun formatRate(bytes: Long): String {
+    val bits = bytes * 8
+    return if (bits > 1_000_000) String.format("%.2f Mbps", bits / 1_000_000.0)
+    else String.format("%.1f Kbps", bits / 1_000.0)
+}
 private fun simState(state: Int) = when(state) { TelephonyManager.SIM_STATE_READY -> "READY"; TelephonyManager.SIM_STATE_ABSENT -> "ABSENT"; TelephonyManager.SIM_STATE_PIN_REQUIRED -> "PIN required"; TelephonyManager.SIM_STATE_PUK_REQUIRED -> "PUK required"; else -> "Unknown" }
 private fun networkTypeName(type: Int) = when(type) { TelephonyManager.NETWORK_TYPE_LTE -> "LTE"; TelephonyManager.NETWORK_TYPE_NR -> "5G NR"; TelephonyManager.NETWORK_TYPE_HSPAP -> "HSPA+"; TelephonyManager.NETWORK_TYPE_UMTS -> "UMTS"; TelephonyManager.NETWORK_TYPE_EDGE -> "EDGE"; TelephonyManager.NETWORK_TYPE_GPRS -> "GPRS"; else -> "Unknown" }

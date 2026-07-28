@@ -26,8 +26,8 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var settings: SettingsStore
     override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState)
         val permissions = if (Build.VERSION.SDK_INT >= 33) {
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.NEARBY_WIFI_DEVICES)
-        } else arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.NEARBY_WIFI_DEVICES, Manifest.permission.READ_PHONE_STATE)
+        } else arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.READ_PHONE_STATE)
         val permission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             // Refresh even if some permissions were declined, so the UI always reflects reality.
             vm.refreshConnection()
