@@ -79,6 +79,6 @@ class WifiRepository @Inject constructor(private val wifi: WifiManager, @Applica
             val password = Regex("psk=\\\"(.*?)\\\"").find(block)?.groupValues?.get(1)
             ssid?.takeIf { it.isNotBlank() }?.let { SavedWifiNetwork(it, password) }
         }
-        return (xml + supplicant).distinctBy { it.ssid }.sortedBy { it.ssid.lowercase() }
+        return (xml + supplicant).distinctBy { it.ssid }.sortedBy { it.ssid.lowercase() }.toList()
     }
 }

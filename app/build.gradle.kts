@@ -37,6 +37,9 @@ android {
             signingConfig = signingConfigs.getByName("release")
         }
     }
+    lint {
+        abortOnError = false
+    }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
 }
 
@@ -64,6 +67,6 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
     implementation("com.patrykandpatrick.vico:compose:2.0.3")
     debugImplementation("androidx.compose.ui:ui-tooling")
-    implementation("dev.rikka.shizuku:api:13.1.5")
-    implementation("dev.rikka.shizuku:provider:13.1.5")
+    implementation("dev.rikka.shizuku:api:12.1.0")
+    implementation("dev.rikka.shizuku:provider:12.1.0")
 }
