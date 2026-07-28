@@ -41,7 +41,8 @@ class WifiRepository @Inject constructor(private val wifi: WifiManager, @Applica
         }
     }.getOrDefault(WifiSnapshot())
     fun scan(): List<AccessPoint> = runCatching { wifi.scanResults.orEmpty().map { result ->
-        AccessPoint(result.SSID.ifBlank { "[Hidden]" }, result.BSSID, result.level, result.frequency, result.capabilities ?: "", result.timestamp / 1000)
+        val ssid = result.SSID.takeIf { !it.isNullOrBlank() && it != "<unknown ssid>" } ?: "[Hidden]"
+        AccessPoint(ssid, result.BSSID, result.level, result.frequency, result.capabilities ?: "", result.timestamp / 1000)
     }.sortedByDescending { it.rssi } }.getOrDefault(emptyList())
     fun requestScan(): Boolean = runCatching { wifi.startScan() }.getOrDefault(false)
     suspend fun publicIp(): String = withContext(Dispatchers.IO) { runCatching { URL("https://api.ipify.org").readText().trim() }.getOrDefault("Unavailable") }
@@ -57,7 +58,7 @@ class WifiRepository @Inject constructor(private val wifi: WifiManager, @Applica
 
         if (isRoot || hasShizuku) {
             outputLines.mapNotNull { line ->
-                val parts = line.split(Regex("\\s+"))
+                val parts = line.trim().split(Regex("\\s+"))
                 if (parts.size >= 5 && parts.contains("lladdr")) {
                     val ip = parts[0]
                     val macIdx = parts.indexOf("lladdr") + 1
