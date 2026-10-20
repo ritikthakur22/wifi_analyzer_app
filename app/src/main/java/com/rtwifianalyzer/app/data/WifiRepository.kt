@@ -50,9 +50,43 @@ class WifiRepository @Inject constructor(private val wifi: WifiManager, @Applica
     }.getOrDefault(WifiSnapshot())
     fun scan(): List<AccessPoint> = runCatching { wifi.scanResults.orEmpty().map { result ->
         val ssid = result.SSID.takeIf { !it.isNullOrBlank() && it != "<unknown ssid>" } ?: "[Hidden]"
-        AccessPoint(ssid, result.BSSID, result.level, result.frequency, result.capabilities ?: "", result.timestamp / 1000)
+        AccessPoint(ssid, result.BSSID, result.level, result.frequency, result.capabilities ?: "", result.timestamp / 1000, result.channelWidth)
     }.sortedByDescending { it.rssi } }.getOrDefault(emptyList())
-    fun requestScan(): Boolean = runCatching { wifi.startScan() }.getOrDefault(false)
+
+    fun requestScan(): Boolean = runCatching {
+        val isRoot = runCatching { Shell.getShell().isRoot }.getOrDefault(false)
+        val hasShizuku = runCatching { rikka.shizuku.Shizuku.pingBinder() && rikka.shizuku.Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED }.getOrDefault(false)
+        if (isRoot) {
+            runCatching { Shell.cmd("cmd wifi start-scan").exec() }
+        } else if (hasShizuku) {
+            runCatching { rikka.shizuku.Shizuku.newProcess(arrayOf("sh", "-c", "cmd wifi start-scan"), null, null).waitFor() }
+        }
+        wifi.startScan()
+    }.getOrDefault(false)
+
+    suspend fun runDiagnostics(gatewayIp: String, dns1: String): List<com.rtwifianalyzer.app.domain.PingDiagnostic> = withContext(Dispatchers.IO) {
+        val targets = listOf(
+            "Default Gateway" to gatewayIp,
+            "Primary DNS" to dns1,
+            "Cloudflare DNS" to "1.1.1.1",
+            "Google Public DNS" to "8.8.8.8"
+        ).filter { it.second.isNotBlank() && it.second != "—" && it.second != "0.0.0.0" }
+
+        targets.map { (name, ip) ->
+            val start = System.currentTimeMillis()
+            val reachable = runCatching {
+                InetAddress.getByName(ip).isReachable(1000)
+            }.getOrDefault(false)
+            val duration = System.currentTimeMillis() - start
+            com.rtwifianalyzer.app.domain.PingDiagnostic(
+                target = name,
+                ip = ip,
+                latencyMs = if (reachable) duration else null,
+                isReachable = reachable,
+                error = if (reachable) null else "Timeout"
+            )
+        }
+    }
     suspend fun publicIp(): String = withContext(Dispatchers.IO) { runCatching { URL("https://api.ipify.org").readText().trim() }.getOrDefault("Unavailable") }
     suspend fun arpDevices(): List<NetworkDevice> = withContext(Dispatchers.IO) {
         val isRoot = runCatching { Shell.getShell().isRoot }.getOrDefault(false)

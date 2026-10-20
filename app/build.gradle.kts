@@ -13,8 +13,8 @@ android {
         applicationId = "com.rtwifianalyzer.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.4.0"
+        versionCode = 7
+        versionName = "1.5.0"
     }
     buildFeatures { compose = true; buildConfig = true }
     compileOptions {

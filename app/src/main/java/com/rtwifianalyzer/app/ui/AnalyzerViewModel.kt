@@ -15,7 +15,18 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class AnalyzerState(val wifi: WifiSnapshot = WifiSnapshot(), val points: List<AccessPoint> = emptyList(), val history: List<Int> = emptyList(), val loading: Boolean = false, val message: String? = null, val publicIpLoading: Boolean = false, val savedWifi: List<SavedWifiNetwork> = emptyList(), val savedWifiMessage: String? = null)
+data class AnalyzerState(
+    val wifi: WifiSnapshot = WifiSnapshot(),
+    val points: List<AccessPoint> = emptyList(),
+    val history: List<Int> = emptyList(),
+    val loading: Boolean = false,
+    val message: String? = null,
+    val publicIpLoading: Boolean = false,
+    val savedWifi: List<SavedWifiNetwork> = emptyList(),
+    val savedWifiMessage: String? = null,
+    val diagnostics: List<com.rtwifianalyzer.app.domain.PingDiagnostic> = emptyList(),
+    val diagnosticsLoading: Boolean = false
+)
 
 @HiltViewModel
 class AnalyzerViewModel @Inject constructor(private val repo: WifiRepository, private val db: DeviceDatabase) : ViewModel() {
@@ -50,4 +61,13 @@ class AnalyzerViewModel @Inject constructor(private val repo: WifiRepository, pr
     fun scan() { viewModelScope.launch { _state.update { it.copy(loading = true, message = null) }; val allowed = repo.requestScan(); _state.update { it.copy(points = repo.scan(), loading = false, message = if (allowed) null else "Scan request throttled by Android; showing last available results.") } } }
     fun devices() { viewModelScope.launch { _state.update { it.copy(loading = true) }; val found = repo.arpDevices(); found.forEach { d -> db.deviceDao().upsert(DeviceEntity(d.mac, d.ip, d.name, d.manufacturer, System.currentTimeMillis(), System.currentTimeMillis(), true)) }; val emptyMessage = if (repo.isWifiConnected()) "No LAN devices are currently in Android's ARP table. This is common on Android 10+ until a device has communicated with your phone." else "Connect to Wi‑Fi, then try device discovery again."; _state.update { it.copy(loading = false, message = if (found.isEmpty()) emptyMessage else null) } } }
     fun savedWifiNetworks() { viewModelScope.launch { _state.update { it.copy(loading = true, savedWifiMessage = null) }; val (networks, message) = repo.savedWifiNetworks(); _state.update { it.copy(loading = false, savedWifi = networks, savedWifiMessage = message) } } }
+    fun runDiagnostics() {
+        viewModelScope.launch {
+            val gateway = _state.value.wifi.gateway
+            val dns1 = _state.value.wifi.dns1
+            _state.update { it.copy(diagnosticsLoading = true) }
+            val results = repo.runDiagnostics(gateway, dns1)
+            _state.update { it.copy(diagnostics = results, diagnosticsLoading = false) }
+        }
+    }
 }

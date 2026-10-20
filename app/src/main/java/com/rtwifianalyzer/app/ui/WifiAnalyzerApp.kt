@@ -39,15 +39,20 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rtwifianalyzer.app.R
 import com.rtwifianalyzer.app.domain.*
 import com.rtwifianalyzer.app.ui.components.ParabolicSpectrumChart
 import com.rtwifianalyzer.app.util.ChannelEvaluator
 import com.rtwifianalyzer.app.util.copy
+import kotlin.math.log10
+import kotlin.math.pow
+import kotlin.math.abs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.DateFormat
@@ -77,10 +82,18 @@ private enum class Destination(val title: String, val icon: androidx.compose.ui.
     ModalNavigationDrawer(drawerState = drawer, drawerContent = {
         ModalDrawerSheet(Modifier.width(280.dp), drawerContainerColor = MaterialTheme.colorScheme.surface) {
             Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(20.dp)) {
-                Icon(Icons.Default.Radar, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
-                Spacer(Modifier.height(8.dp))
-                Text("WiFi Analyzer", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                Text(if (privileged) "Privileged engine active" else "Standard mode", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.foundation.Image(
+                        painter = painterResource(id = R.mipmap.ic_launcher),
+                        contentDescription = "WiFi Analyzer Logo",
+                        modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp))
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("WiFi Analyzer", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Text(if (privileged) "Privileged engine active" else "Standard mode", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    }
+                }
             }
             Spacer(Modifier.height(8.dp))
             Destination.entries.forEach { item ->
@@ -120,7 +133,7 @@ private enum class Destination(val title: String, val icon: androidx.compose.ui.
             Box(Modifier.padding(padding).fillMaxSize()) {
                 AnimatedContent(destination, label = "screen") { screen ->
                     when (screen) {
-                        Destination.GENERAL -> GeneralScreen(state, vm::refreshConnection)
+                        Destination.GENERAL -> GeneralScreen(state, vm::refreshConnection, vm::runDiagnostics)
                         Destination.SCAN -> ScanScreen(state, scanWithPermission)
                         Destination.GRAPH -> GraphScreen(state, scanWithPermission)
                         Destination.CHANNELS -> ChannelRatingScreen(state, scanWithPermission)
@@ -171,7 +184,7 @@ private enum class Destination(val title: String, val icon: androidx.compose.ui.
     }
 }
 
-@Composable private fun GeneralScreen(state: AnalyzerState, refresh: () -> Unit) {
+@Composable private fun GeneralScreen(state: AnalyzerState, refresh: () -> Unit, runDiagnostics: () -> Unit) {
     val w = state.wifi
     LaunchedEffect(Unit) { while (true) { refresh(); delay(2_000) } }
     ScreenList {
@@ -186,6 +199,50 @@ private enum class Destination(val title: String, val icon: androidx.compose.ui.
             }
             Spacer(Modifier.height(10.dp))
             SignalLine(state.history, w.rssi)
+        }
+        SectionCard("Network Latency & Reachability") {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Jitter & Ping Diagnostics",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(runDiagnostics, enabled = !state.diagnosticsLoading) {
+                    Icon(Icons.Default.Speed, "Run Ping Test", tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+            if (state.diagnosticsLoading) {
+                LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical = 4.dp))
+            }
+            if (state.diagnostics.isEmpty()) {
+                Text(
+                    "Tap speed icon to test reachability and latency to Gateway, DNS, and Web.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                state.diagnostics.forEach { diag ->
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(diag.target, Modifier.weight(1f), fontSize = 13.sp)
+                        Text(diag.ip, Modifier.width(110.dp), fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (diag.isReachable) {
+                            Text(
+                                "${diag.latencyMs} ms",
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = if ((diag.latencyMs ?: 999) < 40) Color(0xFF198038) else Color(0xFFF1C21B)
+                            )
+                        } else {
+                            Text("Timeout", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+            }
         }
         SectionCard("Wireless Link") {
             CopyValue("BSSID", w.bssid)
@@ -226,10 +283,23 @@ private enum class Destination(val title: String, val icon: androidx.compose.ui.
     }
 }
 
+private fun estimateDistance(frequencyMHz: Int, rssi: Int): String {
+    if (frequencyMHz <= 0 || rssi >= 0) return "—"
+    val exp = (27.55 - (20 * log10(frequencyMHz.toDouble())) + abs(rssi)) / 20.0
+    val meters = 10.0.pow(exp)
+    return if (meters < 1.0) String.format("%.1f m", meters)
+    else if (meters < 100.0) String.format("%.1f m", meters)
+    else String.format("%d m", meters.toInt())
+}
+
 @Composable private fun ScanScreen(state: AnalyzerState, scan: () -> Unit) {
     var band by remember { mutableStateOf("All") }
+    var searchQuery by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf<AccessPoint?>(null) }
-    val filtered = state.points.filter { band == "All" || it.band == band }
+    val filtered = state.points.filter { 
+        (band == "All" || it.band == band) &&
+        (searchQuery.isBlank() || it.ssid.contains(searchQuery, ignoreCase = true) || it.bssid.contains(searchQuery, ignoreCase = true) || it.manufacturer.contains(searchQuery, ignoreCase = true))
+    }
     LaunchedEffect(Unit) { scan() }
     ScreenList {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -244,10 +314,24 @@ private enum class Destination(val title: String, val icon: androidx.compose.ui.
             Spacer(Modifier.weight(1f))
             IconButton(scan) { Icon(Icons.Default.Refresh, "Scan") }
         }
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Filter networks by SSID, BSSID or vendor...", fontSize = 13.sp) },
+            leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(18.dp)) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton({ searchQuery = "" }) { Icon(Icons.Default.Clear, null, modifier = Modifier.size(16.dp)) }
+                }
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.fillMaxWidth().height(52.dp)
+        )
         if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
         state.message?.let { Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp) }
         if (filtered.isEmpty()) {
-            SectionCard("No networks") { Text("Tap scan button. Location permission required.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            SectionCard("No networks found") { Text("Tap scan or clear search filter.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         } else {
             filtered.forEach { p ->
                 Card(
@@ -262,11 +346,11 @@ private enum class Destination(val title: String, val icon: androidx.compose.ui.
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
                             Text(p.ssid, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                            Text("${p.bssid} · Ch ${p.channel} · ${p.frequency} MHz", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${p.bssid} · Ch ${p.channel} (${p.channelWidthDisplay}) · ${p.frequency} MHz", fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text("${p.rssi} dBm", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = signalColor(p.rssi))
-                            Text(p.security, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${p.signalPercent}% · ${p.security}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -280,8 +364,10 @@ private enum class Destination(val title: String, val icon: androidx.compose.ui.
                 Spacer(Modifier.height(10.dp))
                 CopyValue("BSSID", p.bssid)
                 CopyValue("Manufacturer", p.manufacturer)
-                CopyValue("Signal", "${p.rssi} dBm")
+                CopyValue("Signal", "${p.rssi} dBm (${p.signalPercent}%)")
+                CopyValue("Estimated Distance", estimateDistance(p.frequency, p.rssi))
                 CopyValue("Band / Channel", "${p.band} / Ch ${p.channel}")
+                CopyValue("Channel Width", p.channelWidthDisplay)
                 CopyValue("Frequency", "${p.frequency} MHz")
                 CopyValue("Security", p.security)
                 CopyValue("Capabilities", p.capabilities)
