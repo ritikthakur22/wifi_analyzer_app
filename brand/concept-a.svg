@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>WiFi Analyzer - Concept A: Spectrum W</title>
+  <g>
+  <!-- Overarching Signal Frequency Wave (Expanded Arc to Path) -->
+  <path d="M 80 180 A 196 196 0 0 1 432 180 L 408 212 A 160 160 0 0 0 104 212 Z" fill="#00C4B4" />
+  
+  <!-- Four Telemetry Spectrum Bars forming the W -->
+  <!-- Left Outer Bar (Level 2) -->
+  <rect x="68" y="240" width="56" height="190" rx="28" fill="#0062D2" />
+  <!-- Center-Left Peak Bar (Level 4) -->
+  <rect x="174" y="118" width="56" height="312" rx="28" fill="#0062D2" />
+  <!-- Center-Right Peak Bar (Level 4) -->
+  <rect x="282" y="118" width="56" height="312" rx="28" fill="#0062D2" />
+  <!-- Right Outer Bar (Level 2) -->
+  <rect x="388" y="240" width="56" height="190" rx="28" fill="#0062D2" />
+
+  <!-- Central Diagnostic Beacon / Focal Point -->
+  <circle cx="256" cy="404" r="22" fill="#00C4B4" />
+</g>
+</svg>

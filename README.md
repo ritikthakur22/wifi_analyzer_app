@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://img.icons8.com/color/150/000000/wifi--v1.png" width="100" alt="WiFi Analyzer Icon"/>
+  <img src="brand/logo.png" width="120" alt="WiFi Analyzer Logo"/>
   <h1>📶 WiFi Analyzer (Android)</h1>
   <p><strong>A comprehensive, modern Android application for analyzing Wi-Fi networks, device discovery, and telemetry.</strong></p>
 

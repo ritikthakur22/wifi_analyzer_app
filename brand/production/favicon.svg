@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><title>WiFi Analyzer</title><g transform="translate(-23.27 -23.3) scale(0.591)">
+  
+  <g fill-rule="evenodd">
+  <!-- Outer Diagnostic Ring -->
+  <path d="M 256 48 A 208 208 0 1 1 255.9 48 Z M 256 88 A 168 168 0 1 0 256.1 88 Z" fill="#0F62FE" />
+  
+  <!-- Swept Signal Arcs (Opposing Diagnostic Quadrants) -->
+  <path d="M 256 128 A 128 128 0 0 1 384 256 L 344 256 A 88 88 0 0 0 256 168 Z" fill="#00D2B4" />
+  <path d="M 256 384 A 128 128 0 0 1 128 256 L 168 256 A 88 88 0 0 0 256 344 Z" fill="#00D2B4" />
+  
+  <!-- Diagnostic Crosshair Aperture Bars -->
+  <rect x="244" y="56" width="24" height="64" rx="12" fill="#0F62FE" />
+  <rect x="244" y="392" width="24" height="64" rx="12" fill="#0F62FE" />
+  <rect x="56" y="244" width="64" height="24" rx="12" fill="#0F62FE" />
+  <rect x="392" y="244" width="64" height="24" rx="12" fill="#0F62FE" />
+  
+  <!-- Center Emitter Ring with Real Hole (True Negative Space) -->
+  <path d="M 256 216 A 40 40 0 1 1 255.9 216 Z M 256 238 A 18 18 0 1 0 256.1 238 Z" fill="#0F62FE" />
+</g>
+</g></svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>WiFi Analyzer - Concept C: Pulse Beacon</title>
+  <g>
+  <!-- Outer Wave Crest -->
+  <path d="M 64 240 A 192 192 0 0 1 448 240 L 408 240 A 152 152 0 0 0 104 240 Z" fill="#1D4ED8" />
+  
+  <!-- Middle Wave Crest -->
+  <path d="M 124 288 A 132 132 0 0 1 388 288 L 348 288 A 92 92 0 0 0 164 288 Z" fill="#1D4ED8" />
+  
+  <!-- Inner Wave Crest -->
+  <path d="M 184 336 A 72 72 0 0 1 328 336 L 296 336 A 40 40 0 0 0 216 336 Z" fill="#06B6D4" />
+  
+  <!-- Beacon Emitter / Signal Origin Dot -->
+  <circle cx="256" cy="408" r="28" fill="#06B6D4" />
+</g>
+</svg>
