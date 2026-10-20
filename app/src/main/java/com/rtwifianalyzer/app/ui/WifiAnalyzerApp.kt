@@ -84,7 +84,7 @@ private enum class Destination(val title: String, val icon: androidx.compose.ui.
             Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     androidx.compose.foundation.Image(
-                        painter = painterResource(id = R.mipmap.ic_launcher),
+                        painter = painterResource(id = R.drawable.ic_logo),
                         contentDescription = "WiFi Analyzer Logo",
                         modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp))
                     )
