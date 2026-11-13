@@ -6,8 +6,8 @@ The official logo for **WiFi Analyzer** is built around an analytical scanner ap
 - **Mark Type**: Pictorial / Diagnostic Target Emblem
 - **Geometry**: Concentric circular wave bands with a 45° diagnostic crosshair aperture and true negative space center.
 - **Master Files**:
-  - Vector: [`brand/logo.svg`](file:///home/crdy/testing/app/WiFi_Analyzer/brand/logo.svg)
-  - Hi-Res Raster: [`brand/logo.png`](file:///home/crdy/testing/app/WiFi_Analyzer/brand/logo.png)
+  - Vector: [`brand/logo.svg`](logo.svg)
+  - Hi-Res Raster: [`brand/logo.png`](logo.png)
 
 ## 2. Color Palette
 | Role | Color Name | Hex Code | Usage |

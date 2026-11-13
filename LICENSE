@@ -1,6 +1,26 @@
-Copyright (c) 2026 Ritik Thakur
+# WiFi Analyzer Software License Agreement
 
-All rights reserved.
+Copyright (c) 2026 Ritik Thakur. All rights reserved.
 
-This source code is licensed under a proprietary license. 
-You may not copy, distribute, modify, or use this code, in whole or in part, without the express written permission of the copyright owner.
+## 1. Scope & Grant of Rights
+WiFi Analyzer ("the Software") is an Android networking and telemetry application developed and maintained by Ritik Thakur.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to view, download, study, and run the Software strictly for personal, non-commercial, and educational evaluation purposes.
+
+## 2. Restrictions & Prohibited Uses
+Without explicit prior written authorization from Ritik Thakur, the following activities are strictly prohibited:
+
+1. **App Store Publishing & Redistribution:** You may NOT publish, republish, distribute, upload, or make available this Software, or any derivative works, forks, modifications, or builds thereof, on any public or private app marketplace or distribution channel, including but not limited to the **Google Play Store**, Apple App Store, F-Droid, Amazon Appstore, or third-party APK/AAB/IPA repositories.
+2. **Commercial Exploitation:** You may NOT use, license, sub-license, sell, rent, monetize, or exploit the Software, its source code, or any compiled binaries for commercial purposes.
+3. **Rebranding & Attribution:** You may NOT remove, alter, or obscure any copyright notices, trademarks, or author attributions associated with the Software.
+
+## 3. Official Releases & Inquiries
+The official releases, source code, and developer portfolio are maintained at:
+- **Repository:** https://github.com/ritikthakur22/wifi_analyzer_app
+- **Package ID:** `com.rtwifianalyzer.app`
+- **Author Portfolio & Contact:** https://www.ritikthakur.com.np
+
+For licensing permissions, commercial inquiries, or authorization requests, contact Ritik Thakur directly through the portfolio contact channels.
+
+## 4. Disclaimer of Warranty
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

@@ -5,10 +5,11 @@
 
   <p>
     <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Platform: Android" />
-    <img src="https://img.shields.io/badge/Kotlin-1.9+-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin" />
+    <img src="https://img.shields.io/badge/Kotlin-2.0+-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin" />
     <img src="https://img.shields.io/badge/Compose-Material%203-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose" />
     <img src="https://img.shields.io/badge/SDK-26%20to%2035-3DDC84?style=flat-square" alt="SDK 26 to 35" />
-    <img src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" alt="License: Proprietary" />
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-orange?style=flat-square" alt="License: Proprietary" /></a>
+    <a href="https://www.ritikthakur.com.np"><img src="https://img.shields.io/badge/Author-Ritik%20Thakur-blue?style=flat-square" alt="Author: Ritik Thakur" /></a>
   </p>
 </div>
 
@@ -29,8 +30,6 @@
 ---
 
 ## 📸 Screenshots
-
-> *Replace the image URLs below with actual screenshots of your app running.*
 
 | General Info | Scan Results | Signal Graph | Device Discovery |
 | :---: | :---: | :---: | :---: |
@@ -91,7 +90,7 @@ graph TD
 ## 📁 File Structure
 
 ```text
-WiFi_Analyzer/
+wifi_analyzer_app/
 ├── app/
 │   ├── build.gradle.kts          # App-level build script
 │   └── src/main/
@@ -103,6 +102,8 @@ WiFi_Analyzer/
 │           ├── domain/           # Data models (WifiSnapshot, NetworkDevice)
 │           ├── ui/               # Compose UI, Navigation, ViewModel
 │           └── util/             # Helper classes (OUI Lookup, Clipboard)
+├── brand/                        # Official brand guidelines, logos & icon assets
+├── docs/                         # App screenshots & documentation
 ├── build.gradle.kts              # Project-level build script
 └── progress.md                   # Development progress tracker
 ```
@@ -128,12 +129,25 @@ WiFi_Analyzer/
 
 1.  **Clone the repository.**
 2.  **Open in Android Studio:** Android Studio Hedgehog or later is recommended.
-3.  **Sync Gradle:** The project uses Gradle 9.1 and Android Gradle Plugin 8.7.
+3.  **Sync Gradle:** The project uses Gradle and Android Gradle Plugin 8.7.
 4.  **Run:** Select an emulator or physical device and click Run.
 
 *Note: For the best experience testing ARP discovery and scanning limits, use a physical device.*
 
 ---
+
+## 📄 License & Terms of Use
+
+This project is licensed under the **WiFi Analyzer Software License Agreement** - see the [LICENSE](LICENSE) file for complete details:
+
+- **Personal & Educational Evaluation:** You may view, download, study, and run the application for personal, non-commercial, and educational evaluation purposes.
+- **Prohibited Without Prior Authorization:** You may NOT publish, republish, distribute, upload, or make available this software, derivative works, forks, or compiled APK/AAB packages on the **Google Play Store**, Apple App Store, F-Droid, Amazon Appstore, or any app marketplace without explicit prior written authorization from Ritik Thakur.
+- **Commercial Use:** Commercial redistribution, reselling, or monetization without authorization is strictly prohibited.
+
+For licensing permissions or inquiries, contact [Ritik Thakur](https://www.ritikthakur.com.np).
+
+---
+
 <div align="center">
-  <p>Made with ❤️ using Jetpack Compose</p>
+  <p>Developed with ❤️ by <a href="https://www.ritikthakur.com.np">Ritik Thakur</a></p>
 </div>
